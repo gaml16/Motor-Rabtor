@@ -1,8 +1,12 @@
 [project]
-name = "motor-rabtor"
+name = "motor_rabtor"
 version = "1.0.0"
 description = "Motor Rabtor Controller"
 dependencies = ["flet", "bleak"]
+
+[tool.flet]
+org = "com.motorrabtor"
+product = "Motor Rabtor"
 
 [tool.flet.android]
 permissions = [
