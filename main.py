@@ -73,7 +73,7 @@ def main(page: ft.Page):
             else:
                 status.value = "الجهاز غير موجود، تأكد من تشغيله"
                 status.color = ft.Colors.RED_ACCENT
-        except Exception as ex:
+        except Exception:
             status.value = "فشل الاتصال: فعّل البلوتوث والموقع وأعطِ الصلاحية"
             status.color = ft.Colors.RED_ACCENT
         page.update()
@@ -173,5 +173,82 @@ def main(page: ft.Page):
 
     # 4. الصفحة الرابعة: الرادار الذكي
     radar_status = ft.Text("جاري فحص المسار...", size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
-    dist_txt = ft.Text("المسافة: -- سم",
+    dist_txt = ft.Text("المسافة: -- سم", size=14, color=ft.Colors.CYAN_200)
+    
+    radar_box = ft.Container(
+        width=260,
+        height=180,
+        bgcolor=ft.Colors.GREEN_900,
+        border_radius=16,
+        alignment=ft.Alignment.CENTER,
+        padding=10,
+        content=ft.Column(
+            [radar_status, dist_txt],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        )
+    )
+
+    def update_radar_ui(distance):
+        dist_txt.value = f"المسافة الحالية: {distance:.1f} سم"
+        if distance <= 15.0:
+            radar_box.bgcolor = ft.Colors.RED_900
+            radar_status.value = "🚨 تحذير: عائق ضخم وقريب جداً!"
+            try:
+                haptic.heavy_impact()
+            except Exception:
+                pass
+        elif distance <= 40.0:
+            radar_box.bgcolor = ft.Colors.ORANGE_900
+            radar_status.value = "⚠️ انتبه: عائق بسيط أمام الروبوت"
+        else:
+            radar_box.bgcolor = ft.Colors.GREEN_900
+            radar_status.value = "✅ المسار سالك وآمن تماماً"
+        page.update()
+
+    current_test_dist = 60.0
+    def cycle_test_radar(e):
+        nonlocal current_test_dist
+        if current_test_dist > 40.0:
+            current_test_dist = 28.0
+        elif current_test_dist > 20.0:
+            current_test_dist = 11.5
+        else:
+            current_test_dist = 75.0
+        update_radar_ui(current_test_dist)
+
+    p4 = ft.Column([
+        ft.Text("الرادار وكشف العوائق", size=18, weight=ft.FontWeight.BOLD),
+        radar_box,
+        ft.Row([btn("رادار شمال", "RL"), btn("رادار يمين", "RR")], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Button(content=ft.Text("فحص وتجربة حساسية الرادار"), icon=ft.Icons.SENSORS, on_click=cycle_test_radar)
+    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=12)
+
+    header = ft.Column([
+        ft.Row([ip_box, ft.IconButton(ft.Icons.WIFI, on_click=lambda e: page.run_task(set_wifi, e))], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([ble_box, ft.IconButton(ft.Icons.BLUETOOTH, on_click=lambda e: page.run_task(set_ble, e))], alignment=ft.MainAxisAlignment.CENTER),
+        status
+    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5)
+
+    pages = [p1, p2, p3, p4]
+    body = ft.Container(content=pages[0], padding=10)
+
+    def change_tab(e):
+        body.content = pages[e.control.selected_index]
+        page.update()
+
+    page.navigation_bar = ft.NavigationBar(
+        on_change=change_tab,
+        destinations=[
+            ft.NavigationBarDestination(icon=ft.Icons.GAMEPAD, label="الحركة"),
+            ft.NavigationBarDestination(icon=ft.Icons.SETTINGS_VOICE, label="الأوامر"),
+            ft.NavigationBarDestination(icon=ft.Icons.ACCESSIBILITY_NEW, label="الأطراف"),
+            ft.NavigationBarDestination(icon=ft.Icons.RADAR, label="الرادار"),
+        ]
+    )
+
+    page.add(header, body)
+
+if __name__ == "__main__":
+    ft.run(main)
     
